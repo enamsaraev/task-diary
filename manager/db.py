@@ -2,6 +2,11 @@ import sqlite3 as sq
 
 from datetime import datetime, time
 
+from sqlquery import (
+    CREATE_TABLE_TASK,
+    CREATE_TABLE_STAT,
+)
+
 class DB:
 
     def __init__(self) -> None:
@@ -12,33 +17,26 @@ class DB:
         """Connect app with DB"""
 
         with sq.connect('task.db') as conn:
-            cur = conn.cursor()
-            cur.execute("""CREATE TABLE IF NOT EXISTS task(
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL,
-                task TEXT NOT NULL,
-                date TIMESTAMP CURRENT_TIMESTAMP,
-                is_done BOOLEAN DEFAULT FALSE
-                )""")
+            conn.execute(CREATE_TABLE_TASK)
+            conn.execute(CREATE_TABLE_STAT)
     
 
     def check_task(self, id: int) -> bool:
         """Return bool if task exists"""
 
         with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
-
             return conn.execute(
                 f'SELECT EXISTS(SELECT id FROM task WHERE id="{id}" LIMIT 1)'
             ).fetchone()
 
 
-    def return_tasks_data(self):
+    def return_tasks_data_whic_is_not_done(self):
         """"""
 
         with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
             conn.row_factory = sq.Row
             return conn.execute(
-                """SELECT * FROM task"""
+                """SELECT * FROM task WHERE is_done=False"""
             )
         
     
@@ -48,7 +46,7 @@ class DB:
         with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
             conn.row_factory = sq.Row
             return conn.execute(
-                f'SELECT name, task, date FROM task WHERE id={id}'
+                f'SELECT name, task, date, is_done FROM task WHERE id={id}'
             ).fetchone()
         
 
@@ -80,4 +78,29 @@ class DB:
         with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
             return conn.execute(
                 """SELECT * FROM task WHERE date BETWEEN ? AND ?""", (dt, dt_end)
+            ).fetchall()
+        
+
+    def set_task_as_done(self, id: int):
+        """"""
+
+        dt = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+
+        with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
+            conn.execute(
+                f'UPDATE task SET is_done=True WHERE id={id}'
+            )
+            conn.execute(
+                f'INSERT INTO stat (date, task_id) \
+                VALUES ("{dt}", "{id}")'
+            )
+
+    
+    def get_some_stat(self):
+        """"""
+
+        with sq.connect('task.db', detect_types=sq.PARSE_DECLTYPES) as conn:
+            return conn.execute(
+                f'SELECT task.name, task.task, stat.date from stat \
+                  INNER JOIN task ON task.id = stat.task_id'
             ).fetchall()

@@ -1,0 +1,18 @@
+CREATE_TABLE_TASK = """
+    CREATE TABLE IF NOT EXISTS task(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        task TEXT NOT NULL,
+        date TIMESTAMP CURRENT_TIMESTAMP,
+        is_done BOOLEAN DEFAULT FALSE
+    )
+"""
+
+CREATE_TABLE_STAT = """
+    CREATE TABLE IF NOT EXISTS stat(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TIMESTAMP CURRENT_TIMESTAMP,
+        task_id INTEGER,
+        FOREIGN KEY (task_id) REFERENCES task(id)
+    )
+"""
