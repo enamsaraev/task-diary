@@ -14,19 +14,9 @@ class Command:
             '2': ['Добавить новую задачу', self.add_new_task],
             '3': ['Обновить задачу', self.update_current_task],
             '4': ['Вернуть задачу на заданный день', self.return_task_by_current_datetime],
+            '5': ['Отметить выполненную задачу', self.set_task_as_done],
+            '6': ['Вывести статистику', self.get_statistic],
         }
-
-
-    @staticmethod
-    def user_input(msg: str, field: str = None, dict_data: dict = None):
-
-        if not field and not dict_data:
-            return input(msg)
-        
-        data = input(msg)
-
-        if not data:
-            return dict_data[field]
 
     def run_command(self, command: str) -> None:
         """Running a current command"""
@@ -43,13 +33,15 @@ class Command:
     def show_current_users_tasks(self):
         """Returns a list of current tasks"""
 
-        data = self.db.return_tasks_data()
+        data = self.db.return_tasks_data_whic_is_not_done()
+
         for task in data:
             MSG(f'''
                 ID: {task['id']}
                 Название: {task['name']}
                 Таска: {task['task']}
                 Дата: {task['date']}
+                Статус выполнения: {task['is_done']}
             ''')()
 
     def add_new_task(self):
@@ -100,9 +92,34 @@ class Command:
                 Название: {task[1]}
                 Таска: {task[2]}
                 Дата: {task[3]}
+                Статус выполнения: {task[4]}
             ''')()
 
+
+    def set_task_as_done(self):
+
+        task_id = input('Введите ID таски: ')
+
+        if not self.__check_row_on_exists(task_id):
+            return
+        
+        self.db.set_task_as_done(task_id)
+        print('<Done>')
+
     
+    def get_statistic(self):
+
+        data = self.db.get_some_stat()
+
+        for task in data:
+            MSG(f'''
+                Название: {task[0]}
+                Таска: {task[1]}
+                Дата: {task[2]}
+            ''')()
+
+
+
     def __check_row_on_exists(self, id: int) -> bool:
         """Check if row exists"""
         if not self.db.check_task(id)[0]:
@@ -112,6 +129,7 @@ class Command:
         
         return True
     
+
     def __check_date(self, date: str, format: str) -> bool:
         """Check if date has valid format"""
 
